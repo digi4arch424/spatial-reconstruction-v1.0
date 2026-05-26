@@ -1,45 +1,48 @@
-# 🎮 Spatial Recon Game
+# 🎮 Spatial Recon Game — Level → Deployment Architecture Map
 
-A web-based, open-source 3D reconstruction system that transforms phone camera capture into real-time 3D scenes.
-
-Built as a progression game.
+A web-based, open-source 3D reconstruction system that evolves from simple phone camera capture into a distributed spatial computing engine.
 
 Each level is a real subsystem.
 
-Each unlock adds a new capability to the reconstruction engine.
+Each subsystem maps to a real deployment environment.
 
-From:
+This is not a single app.
 
-📷 Capture a photo
-
-To:
-
-🌐 Full spatial computing platform
+It is a distributed spatial compilation system.
 
 ---
 
-# 🚀 Core Principles
+# 🧠 System Overview
 
-- 100% web-based
-- open-source oriented
-- modular and pipeline-driven
-- assembly-style architecture
-- browser-first
-- scalable from local development to production deployment
+The system evolves across 4 compute domains:
 
-Supports:
+### 1. 🌐 Browser Layer (Levels 1–3)
+- Capture + UI + preview
+- Fully static deployment
 
-- Structure-from-Motion (SfM)
-- Multi-view Stereo (MVS)
-- Mesh reconstruction
-- Gaussian Splatting
-- Semantic reconstruction
-- Parametric modeling
-- WebXR output
+### 2. ⚙️ WASM / Edge Layer (Levels 4–6)
+- Feature extraction + light geometry compute
+- Hybrid browser + edge functions
+
+### 3. ☁️ GPU Cloud Layer (Levels 7–14)
+- SfM → MVS → mesh → splats → real-time reconstruction
+- Distributed GPU pipelines
+
+### 4. 🧠 AI + Spatial OS Layer (Levels 15–20)
+- Semantics → scene graphs → WebXR → multi-user worlds
+- Full spatial intelligence system
 
 ---
 
-# 🎮 Web-Based 3D Reconstruction System — Level Progression Game
+# 🟢 EARLY GAME (Browser-Only Stack)
+
+🌐 Deployment Target: Static Web Apps
+
+- GitHub Pages
+- Vercel
+- Netlify
+- Vite frontend
+- WebRTC + WebGL
 
 ---
 
@@ -54,8 +57,13 @@ Basic image capture from phone camera (WebRTC / getUserMedia)
 **System:**  
 Single-frame acquisition + storage
 
-**Tools:**  
-MediaDevices API, WebRTC
+**Deploy as:**  
+Static frontend module (`/apps/web-capture`)
+
+**Stack:**
+- WebRTC (getUserMedia)
+- Vite dev server
+- GitHub Pages deploy
 
 ---
 
@@ -68,10 +76,14 @@ MediaDevices API, WebRTC
 Multi-frame capture with timestamps
 
 **System:**  
-Image buffering + session capture module
+Image buffering + session state manager
 
-**Tools:**  
-MediaRecorder API, IndexedDB
+**Deploy as:**  
+Frontend state module
+
+**Stack:**
+- IndexedDB (browser storage)
+- Local session manager
 
 ---
 
@@ -86,8 +98,20 @@ Guided capture (turntable or AR overlay guidance)
 **System:**  
 Capture UX with spatial prompts
 
-**Tools:**  
-Three.js overlays, basic heuristics
+**Deploy as:**  
+UI overlay system
+
+**Stack:**
+- Three.js overlays
+- Frontend guidance heuristics
+
+---
+
+# 🟡 MID LAYER (Hybrid Browser + Lightweight Compute)
+
+🌐 Deployment Target:
+- Vercel Edge Functions OR
+- Cloudflare Workers + small API backend
 
 ---
 
@@ -102,8 +126,12 @@ Feature detection per frame
 **System:**  
 Feature extraction pipeline
 
-**Tools:**  
-OpenCV.js, ORB/SIFT-like methods
+**Deploy as:**  
+WASM module (optional edge compute)
+
+**Stack:**
+- OpenCV.js (client)
+- OR WASM worker (Rust/C++)
 
 ---
 
@@ -113,33 +141,49 @@ OpenCV.js, ORB/SIFT-like methods
 “The system estimates camera motion.”
 
 **Capability:**  
-Camera pose estimation across frames
+Camera pose estimation
 
 **System:**  
-SfM pipeline initialization
+SfM initialization service
 
-**Tools:**  
-COLMAP, OpenMVG
+**Deploy as:**  
+Backend SfM microservice
+
+**Stack:**
+- Python FastAPI
+- COLMAP container
+- Docker workers
 
 ---
 
 ## Level 6 — Pose Graph Engine
 
 **Game mechanic:**  
-“Frames now connect into a navigable graph.”
+“Frames connect into a navigable graph.”
 
 **Capability:**  
 Camera trajectory reconstruction
 
 **System:**  
-Pose graph optimization layer
+Pose graph optimization
 
-**Tools:**  
-g2o, Ceres Solver
+**Deploy as:**  
+Compute service
+
+**Stack:**
+- Ceres Solver / g2o
+- Job queue (Redis / BullMQ)
 
 ---
 
-## Level 7 — Sparse World Reconstruction
+# ☁️ GPU CLOUD LAYER (Geometry → Neural Rendering)
+
+🌐 Deployment Target:
+GPU cloud cluster + batch pipelines
+
+---
+
+## Level 7 — Sparse Reconstruction
 
 **Game mechanic:**  
 “A skeletal 3D world appears.”
@@ -148,26 +192,34 @@ g2o, Ceres Solver
 Sparse point cloud generation
 
 **System:**  
-SfM point cloud output
+SfM reconstruction output
 
-**Tools:**  
-COLMAP sparse reconstruction
+**Deploy as:**  
+Batch pipeline
+
+**Stack:**
+- COLMAP server container
+- Object storage (S3)
 
 ---
 
-## Level 8 — Dense Geometry Awakening
+## Level 8 — Dense Reconstruction
 
 **Game mechanic:**  
 “The world fills in detail.”
 
 **Capability:**  
-Dense reconstruction from multi-view stereo
+Dense reconstruction
 
 **System:**  
-Depth estimation + fusion
+Depth fusion pipeline
 
-**Tools:**  
-OpenMVS, COLMAP dense
+**Deploy as:**  
+GPU worker cluster job
+
+**Stack:**
+- OpenMVS
+- CUDA instances (AWS G5 / RunPod)
 
 ---
 
@@ -182,8 +234,12 @@ Mesh reconstruction
 **System:**  
 Surface reconstruction pipeline
 
-**Tools:**  
-Poisson reconstruction, marching cubes
+**Deploy as:**  
+Post-processing worker
+
+**Stack:**
+- Open3D / MeshLab
+- Python pipeline
 
 ---
 
@@ -196,14 +252,18 @@ Poisson reconstruction, marching cubes
 UV mapping + texture baking
 
 **System:**  
-Texture projection system
+Texture projection pipeline
 
-**Tools:**  
-Blender pipelines, OpenMVS texturing
+**Deploy as:**  
+Asset baking system
+
+**Stack:**
+- Blender CLI headless mode
+- GPU rendering nodes
 
 ---
 
-## Level 11 — Reconstruction Pipeline Orchestrator
+## Level 11 — Pipeline Orchestrator
 
 **Game mechanic:**  
 “You can rerun and upgrade reconstructions.”
@@ -212,10 +272,14 @@ Blender pipelines, OpenMVS texturing
 Modular pipeline execution
 
 **System:**  
-Job graph + pipeline orchestration
+Job graph orchestration
 
-**Tools:**  
-Node-based graph engine, Dagster-like flow
+**Deploy as:**  
+Core backend brain
+
+**Stack:**
+- Temporal.io / Dagster
+- Kubernetes (optional)
 
 ---
 
@@ -228,10 +292,14 @@ Node-based graph engine, Dagster-like flow
 3D Gaussian Splat representation
 
 **System:**  
-Neural scene representation layer
+Neural scene representation
 
-**Tools:**  
-3D Gaussian Splatting, Nerfstudio
+**Deploy as:**  
+Training + reconstruction service
+
+**Stack:**
+- Nerfstudio
+- GPU training cluster
 
 ---
 
@@ -241,13 +309,17 @@ Neural scene representation layer
 “You can walk through reconstructions instantly.”
 
 **Capability:**  
-WebGPU real-time rendering of splats
+WebGPU rendering of splats
 
 **System:**  
-GPU-accelerated viewer
+GPU viewer runtime
 
-**Tools:**  
-WebGPU, Three.js, custom renderer
+**Deploy as:**  
+Browser + CDN pipeline
+
+**Stack:**
+- WebGPU renderer
+- Cloudflare R2 / S3 streaming
 
 ---
 
@@ -257,61 +329,85 @@ WebGPU, Three.js, custom renderer
 “Capture → reconstruct → render in real time.”
 
 **Capability:**  
-Incremental reconstruction from live camera feed
+Live incremental reconstruction
 
 **System:**  
-Live SfM + streaming updates
+Streaming spatial pipeline
 
-**Tools:**  
-WebSockets, incremental SfM, NeRF pipelines
+**Deploy as:**  
+Real-time GPU system
+
+**Stack:**
+- WebRTC ingestion
+- WebSocket sync
+- GPU inference server
+
+---
+
+# 🧠 INTELLIGENCE LAYER (Semantic + Parametric)
+
+🌐 Deployment Target:
+AI microservices + vector + graph databases
 
 ---
 
 ## Level 15 — Semantic Scene Layer
 
 **Game mechanic:**  
-“Objects in the world become identifiable.”
+“Objects become identifiable.”
 
 **Capability:**  
-Object labeling + segmentation in 3D
+3D object labeling + segmentation
 
 **System:**  
-Semantic tagging layer over geometry
+Semantic tagging layer
 
-**Tools:**  
-SAM (Segment Anything), CLIP-based labeling
+**Stack:**
+- SAM (Segment Anything)
+- CLIP embeddings
+- Vector DB (pgvector / Weaviate)
 
 ---
 
-## Level 16 — Parametric Reconstruction Engine
+## Level 16 — Parametric Engine
 
 **Game mechanic:**  
 “Objects become editable models.”
 
 **Capability:**  
-Convert scans into parametric primitives
+Conversion to parametric primitives
 
 **System:**  
 Shape abstraction layer
 
-**Tools:**  
-Neural implicit fields, CAD fitting, primitives extraction
+**Stack:**
+- Neural implicit models
+- CAD fitting services
+- PyTorch inference
 
 ---
 
 ## Level 17 — Scene Graph Intelligence
 
 **Game mechanic:**  
-“The world becomes structured, not just visual.”
+“The world becomes structured.”
 
 **Capability:**  
-Hierarchical 3D scene graph
+Hierarchical spatial relationships
 
 **System:**  
-Relationships between objects (support, adjacency, containment)
+Scene graph engine
 
-**Tools:**  
-Custom scene graph, knowledge graph system
+**Stack:**
+- Neo4j / graph DB
+- Knowledge graph API
+
+---
+
+# 🟠 SPATIAL COMPUTING LAYER
+
+🌐 Deployment Target:
+WebXR + distributed real-time systems
 
 ---
 
@@ -321,29 +417,32 @@ Custom scene graph, knowledge graph system
 “Your reconstruction becomes an AR world.”
 
 **Capability:**  
-Real-world spatial anchoring + AR overlay
+Spatial anchoring + AR overlay
 
 **System:**  
-WebXR spatial mapping layer
+WebXR runtime
 
-**Tools:**  
-WebXR API, Hit-test API
+**Stack:**
+- WebXR API
+- Three.js / Babylon.js
 
 ---
 
 ## Level 19 — Shared Spatial Worlds
 
 **Game mechanic:**  
-“Multiple users edit the same reconstructed space.”
+“Multiple users edit the same world.”
 
 **Capability:**  
-Multi-user spatial synchronization
+Multi-user spatial sync
 
 **System:**  
-Real-time collaborative scene graph
+Collaborative scene graph
 
-**Tools:**  
-WebRTC, CRDTs, Yjs
+**Stack:**
+- WebRTC SFU (LiveKit / mediasoup)
+- Yjs CRDT sync
+- Redis pub/sub
 
 ---
 
@@ -353,80 +452,59 @@ WebRTC, CRDTs, Yjs
 “Reconstruction becomes a full spatial computing platform.”
 
 **Capability:**  
-Full pipeline system:
-capture → reconstruct → semantically understand → render → collaborate
+End-to-end spatial system:
+capture → reconstruct → understand → render → collaborate
 
 **System:**  
-Modular distributed reconstruction OS
+Distributed spatial OS
 
-**Tools:**  
-Kubernetes (optional), edge compute nodes, GPU pipelines, WebGPU/WebXR runtime
+**Stack:**
 
----
+Frontend
+- WebGPU renderer
+- WebXR runtime
+- Vite frontend
 
-# 🧱 Repository Structure
+Backend
+- Kubernetes cluster
+- GPU node pool
+- Temporal / Dagster orchestration
 
-```bash
-apps/
-packages/
-pipelines/
-docs/
-```
+Data Layer
+- S3 / R2 asset storage
+- Vector DB (semantic memory)
+- Graph DB (scene structure)
 
-Example:
-
-```bash
-apps/web-capture/
-apps/reconstruction/
-apps/splat-engine/
-apps/webxr-client/
-
-packages/capture-core/
-packages/sfm-core/
-packages/mvs-core/
-packages/scene-graph/
-packages/pipeline-orchestrator/
-```
+Streaming Layer
+- WebRTC SFU
+- WebSocket sync
+- Edge compute nodes
 
 ---
 
-# 🛠 Development
+# 🚀 Final Architectural Insight
 
-```bash
-git clone https://github.com/yourname/spatial-recon-game
-cd spatial-recon-game
-npm install
-npm run dev
-```
+This system is not a monolithic application.
 
----
+It is a **multi-layer spatial compilation pipeline**, where:
 
-# 🧩 Contribution Model
-
-Pick a level.
-
-Build the subsystem.
-
-Ship the unlock.
-
-Examples:
-
-- Level 1–3 → Capture UX
-- Level 4–10 → Reconstruction
-- Level 11–14 → Neural rendering
-- Level 15–20 → AI + spatial computing
+- Browser = perception entry point
+- Edge = lightweight vision compute
+- Cloud GPU = reconstruction engine
+- AI layer = semantic understanding
+- WebXR layer = spatial interface
 
 ---
 
-# 🏁 Final Goal
+# 🧱 End State
 
-A browser-native system where:
+A system where:
 
-- reality is captured from a phone camera
-- reconstructed into geometry
-- rendered in real time
-- understood semantically
-- shared collaboratively
-- explored spatially
+📷 reality is captured  
+🧠 understood by AI  
+🧱 reconstructed in 3D  
+🌐 streamed in real time  
+🤝 shared across users  
+🕶 experienced in AR  
 
-Built one level at a time.
+All inside the browser ecosystem.
