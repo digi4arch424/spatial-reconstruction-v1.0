@@ -1,0 +1,19 @@
+{
+  "name": "spatial-recon-web-capture",
+  "version": "0.1.0",
+  "description": "Level 1 — Camera Spawn. Single-frame WebRTC capture module.",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.2"
+  }
+}
