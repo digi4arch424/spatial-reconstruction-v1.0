@@ -32,6 +32,9 @@ jobs:
       - run: npm install
       - run: npm run build
 
+      - name: Verify dist contents
+        run: ls -la dist/
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web-capture/dist
