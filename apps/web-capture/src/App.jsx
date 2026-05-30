@@ -1,114 +1,44 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { useWindowSize }                              from './hooks/useWindowSize'
+import { useRef, useCallback }                       from 'react'
+import { useCamera, STATUS }                          from './hooks/useCamera'
 import { useFrameStore }                              from './hooks/useFrameStore'
-import { CornerBrackets, Crosshair, ScanLine,
-         CaptureGuide }                               from './components/HudOverlays'
+import { useWindowSize }                              from './hooks/useWindowSize'
+import { CornerBrackets, Crosshair,
+         ScanLine, CaptureGuide }                     from './components/HudOverlays'
 import { Dot, StatBadge, Clock }                      from './components/Primitives'
 import { MobilePanel }                                from './components/MobilePanel'
 import { FrameStrip }                                 from './components/FrameStrip'
-import { detectBlur, isDuplicate, getPixelSnapshot }  from './utils/imageAnalysis'
-
-const STATUS = {
-  IDLE: 'IDLE', ACQUIRING: 'ACQUIRING',
-  LOCKED: 'LOCKED', CAPTURED: 'CAPTURED', ERROR: 'ERROR'
-}
 
 function generateSessionId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 }
 
 export default function App() {
-  const videoRef      = useRef(null)
-  const canvasRef     = useRef(null)
-  const streamRef     = useRef(null)
-  const lastPixelsRef = useRef(null)
-  const sessionId     = useRef(generateSessionId())
+  const sessionId = useRef(generateSessionId())
+  const width     = useWindowSize()
+  const isMobile  = width < 768
 
-  const [status,     setStatus]     = useState(STATUS.IDLE)
-  const [frameCount, setFrameCount] = useState(0)
-  const [error,      setError]      = useState(null)
-  const [flash,      setFlash]      = useState(false)
-  const [dupAlert,   setDupAlert]   = useState(false)
-
-  const width    = useWindowSize()
-  const isMobile = width < 768
-
+  // ── Frame storage ─────────────────────────────────────────────────────────
   const {
     frames, saveFrame, clearSession, deleteFrame, exportZip
   } = useFrameStore(sessionId.current)
 
-  const startCamera = useCallback(async () => {
-    setStatus(STATUS.ACQUIRING)
-    setError(null)
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      })
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play()
-          setStatus(STATUS.LOCKED)
-        }
-      }
-    } catch (err) {
-      setError(err.message || 'Camera access denied')
-      setStatus(STATUS.ERROR)
-    }
-  }, [])
+  // ── Camera hardware + capture logic ───────────────────────────────────────
+  const {
+    videoRef, canvasRef,
+    status, frameCount, error, flash, dupAlert,
+    isLive, startCamera, captureFrame, stopCamera
+  } = useCamera({
+    onFrameCaptured: (dataUrl, count, isBlurry) =>
+      saveFrame(dataUrl, count, isBlurry)
+  })
 
-  const captureFrame = useCallback(async () => {
-    if (!videoRef.current || status !== STATUS.LOCKED) return
-    const video  = videoRef.current
-    const canvas = canvasRef.current
-    canvas.width  = video.videoWidth
-    canvas.height = video.videoHeight
-    canvas.getContext('2d').drawImage(video, 0, 0)
-
-    // Near-duplicate suppression
-    if (isDuplicate(canvas, lastPixelsRef.current)) {
-      setDupAlert(true)
-      setTimeout(() => setDupAlert(false), 1200)
-      return
-    }
-
-    // Blur detection
-    const isBlurry = detectBlur(canvas)
-
-    // Save pixel snapshot for next duplicate check
-    lastPixelsRef.current = getPixelSnapshot(canvas)
-
-    const dataUrl     = canvas.toDataURL('image/jpeg', 0.92)
-    const nextCount   = frameCount + 1
-    setFrameCount(nextCount)
-    setFlash(true)
-    setTimeout(() => setFlash(false), 180)
-    setStatus(STATUS.CAPTURED)
-    setTimeout(() => setStatus(STATUS.LOCKED), 800)
-
-    await saveFrame(dataUrl, nextCount, isBlurry)
-  }, [status, frameCount, saveFrame])
-
-  const stopCamera = useCallback(async () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop())
-      streamRef.current = null
-    }
+  // ── Stop: hardware + session reset ────────────────────────────────────────
+  const handleStop = useCallback(async () => {
+    stopCamera()
     await clearSession()
-    lastPixelsRef.current = null
-    setStatus(STATUS.IDLE)
-    setFrameCount(0)
-    // Generate new session for next run
     sessionId.current = generateSessionId()
-  }, [clearSession])
+  }, [stopCamera, clearSession])
 
-  useEffect(() => () => {
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
-  }, [])
-
-  const isLive = status === STATUS.LOCKED || status === STATUS.CAPTURED
   const statusColor = {
     IDLE:      'var(--text-dim)',
     ACQUIRING: 'var(--green)',
@@ -161,7 +91,7 @@ export default function App() {
           {/* Video */}
           <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: isLive ? 'block' : 'none', filter: 'contrast(1.05) saturate(0.9)', zIndex: 2, position: 'relative' }} />
 
-          {/* Idle state */}
+          {/* Idle */}
           {!isLive && status !== STATUS.ERROR && (
             <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
               <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
@@ -175,7 +105,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error */}
           {status === STATUS.ERROR && (
             <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 24 }}>
               <span style={{ fontSize: 11, letterSpacing: 4, color: 'var(--red)' }}>ACCESS DENIED</span>
@@ -190,7 +120,6 @@ export default function App() {
               <Crosshair active={status === STATUS.LOCKED} />
               <ScanLine scanning={status === STATUS.ACQUIRING} />
               <CaptureGuide frameCount={frameCount} />
-
               <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 5, pointerEvents: 'none' }}>
                 <div style={{ fontSize: 10, letterSpacing: 3, color: 'rgba(57,232,62,0.8)' }}>REC ●</div>
               </div>
@@ -219,7 +148,7 @@ export default function App() {
               status={status} frameCount={frameCount} frames={frames}
               statusColor={statusColor} isLive={isLive}
               onStart={startCamera} onCapture={captureFrame}
-              onStop={stopCamera} onRetry={startCamera}
+              onStop={handleStop} onRetry={startCamera}
               onDeleteFrame={deleteFrame} onExport={exportZip}
             />
           )}
@@ -229,7 +158,6 @@ export default function App() {
         {!isMobile && (
           <div style={{ width: 260, borderLeft: '1px solid var(--muted)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
 
-            {/* System status */}
             <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 12 }}>SYSTEM STATUS</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -249,7 +177,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Stats */}
             <div style={{ padding: 16, borderBottom: '1px solid var(--muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <StatBadge label="STATUS" value={status}                             color={statusColor}   />
               <StatBadge label="FRAMES" value={String(frameCount).padStart(4,'0')} color="var(--green)" />
@@ -257,7 +184,6 @@ export default function App() {
               <StatBadge label="MODULE" value="CAM"                                color="var(--text)"  />
             </div>
 
-            {/* Controls */}
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10, borderBottom: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 4 }}>CONTROLS</div>
               {status === STATUS.IDLE && (
@@ -278,7 +204,7 @@ export default function App() {
                 </button>
               )}
               {(status === STATUS.LOCKED || status === STATUS.CAPTURED || status === STATUS.ACQUIRING) && (
-                <button onClick={stopCamera} style={{ padding: '10px 0', background: 'transparent', border: '1px solid var(--muted)', color: 'var(--text-dim)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 3, cursor: 'pointer', transition: 'all 0.15s' }}
+                <button onClick={handleStop} style={{ padding: '10px 0', background: 'transparent', border: '1px solid var(--muted)', color: 'var(--text-dim)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 3, cursor: 'pointer', transition: 'all 0.15s' }}
                   onMouseEnter={e => { e.target.style.borderColor = 'var(--red)'; e.target.style.color = 'var(--red)' }}
                   onMouseLeave={e => { e.target.style.borderColor = 'var(--muted)'; e.target.style.color = 'var(--text-dim)' }}>
                   ■ TERMINATE STREAM
@@ -291,13 +217,11 @@ export default function App() {
               )}
             </div>
 
-            {/* Session info */}
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 6 }}>SESSION</div>
               <div style={{ fontSize: 9, letterSpacing: 1, color: 'var(--text-dim)', wordBreak: 'break-all' }}>{sessionId.current}</div>
             </div>
 
-            {/* Level progress */}
             <div style={{ marginTop: 'auto', padding: 16, borderTop: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 10 }}>LEVEL PROGRESS</div>
               <div style={{ display: 'flex', gap: 4 }}>
@@ -311,16 +235,12 @@ export default function App() {
         )}
       </div>
 
-      {/* Frame strip — desktop, full width below main content */}
+      {/* Frame strip — desktop */}
       {!isMobile && (
-        <FrameStrip
-          frames={frames}
-          onDelete={deleteFrame}
-          onExport={exportZip}
-        />
+        <FrameStrip frames={frames} onDelete={deleteFrame} onExport={exportZip} />
       )}
 
-      {/* Bottom status bar — desktop only */}
+      {/* Bottom status bar — desktop */}
       {!isMobile && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '6px 20px', borderTop: '1px solid var(--muted)', background: 'var(--bg-panel)', fontSize: 10, letterSpacing: 2, color: 'var(--text-dim)', flexShrink: 0 }}>
           <span style={{ color: 'var(--green)' }}>DIGI</span>
