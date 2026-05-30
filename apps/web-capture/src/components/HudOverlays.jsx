@@ -1,5 +1,48 @@
 import { useState, useEffect } from 'react'
 
+const FRAME_TARGET = 30
+
+// ─── CAPTURE GUIDE ────────────────────────────────────────────────────────────
+// Shown when camera is locked. Prompts the user to orbit the subject
+// and shows frame target progress for AR-quality capture.
+
+export function CaptureGuide({ frameCount }) {
+  const pct      = Math.min(frameCount / FRAME_TARGET, 1)
+  const barColor = pct < 0.4 ? 'var(--red)' : pct < 0.8 ? '#f59e0b' : 'var(--green)'
+
+  return (
+    <div style={{
+      position: 'absolute', top: 16, right: 16, zIndex: 5,
+      pointerEvents: 'none',
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6
+    }}>
+      {/* Orbit icon + label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 9, letterSpacing: 3, color: 'rgba(57,232,62,0.7)' }}>
+          ORBIT SUBJECT
+        </span>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M9 2 A7 7 0 1 1 2 9" stroke="rgba(57,232,62,0.7)" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+          <polyline points="2,6 2,9 5,9" stroke="rgba(57,232,62,0.7)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {/* Frame target bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 9, letterSpacing: 2, color: barColor }}>
+          {frameCount} / {FRAME_TARGET}
+        </span>
+        <div style={{ width: 60, height: 3, background: 'rgba(255,255,255,0.1)' }}>
+          <div style={{
+            height: '100%', width: `${pct * 100}%`,
+            background: barColor, transition: 'width 0.3s, background 0.3s'
+          }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function CornerBrackets({ color = 'var(--green)', size = 24, thickness = 2, gap = 14 }) {
   const s = { position: 'absolute', width: size, height: size }
   const shared = { border: `${thickness}px solid ${color}` }

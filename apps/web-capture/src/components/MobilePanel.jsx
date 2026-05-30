@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { CornerBrackets } from './HudOverlays'
 import { Dot, StatBadge } from './Primitives'
+import { FrameStrip }     from './FrameStrip'
 
 const STATUS = { IDLE: 'IDLE', ACQUIRING: 'ACQUIRING', LOCKED: 'LOCKED', CAPTURED: 'CAPTURED', ERROR: 'ERROR' }
 
 export function MobilePanel({
-  status, frameCount, captured, statusColor, isLive,
-  onStart, onCapture, onStop, onRetry, onClear
+  status, frameCount, frames, statusColor, isLive,
+  onStart, onCapture, onStop, onRetry,
+  onDeleteFrame, onExport
 }) {
   const [expanded, setExpanded] = useState(false)
 
@@ -30,7 +31,7 @@ export function MobilePanel({
           <Dot on={isLive} color="var(--green)" />
           <span style={{ fontSize: 11, letterSpacing: 3, color: statusColor }}>{status}</span>
           <span style={{ fontSize: 11, letterSpacing: 2, color: 'var(--text-dim)' }}>
-            FRAMES: {String(frameCount).padStart(4, '0')}
+            {String(frameCount).padStart(4, '0')} / 30
           </span>
         </div>
         <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: 2 }}>
@@ -82,53 +83,36 @@ export function MobilePanel({
 
       {/* Expanded section */}
       {expanded && (
-        <div style={{ padding: '16px 20px 20px', borderTop: '1px solid var(--muted)' }}>
+        <div style={{ borderTop: '1px solid var(--muted)' }}>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, padding: '16px 20px 12px' }}>
             <StatBadge label="STATUS" value={status.slice(0, 4)} color={statusColor} />
             <StatBadge label="FRAMES" value={String(frameCount).padStart(4, '0')} color="var(--green)" />
-            <StatBadge label="LAYER"  value="L01" color="var(--blue)" />
+            <StatBadge label="LAYER"  value="L02" color="var(--blue)" />
             <StatBadge label="MODULE" value="CAM"  color="var(--text)" />
           </div>
 
-          {/* Captured thumbnail */}
-          {captured && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 8 }}>LAST CAPTURE</div>
-              <div style={{ position: 'relative', border: '1px solid var(--blue-dim)', marginBottom: 8 }}>
-                <img src={captured} alt="Captured frame" style={{ width: '100%', display: 'block', opacity: 0.9 }} />
-                <CornerBrackets color="var(--blue)" size={12} thickness={1} gap={5} />
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a href={captured} download={`recon-l01-${Date.now()}.jpg`} style={{
-                  flex: 1, padding: '10px 0', textAlign: 'center',
-                  background: 'rgba(0,170,255,0.08)', border: '1px solid var(--blue-dim)',
-                  color: 'var(--blue)', fontFamily: 'var(--mono)',
-                  fontSize: 11, letterSpacing: 2, textDecoration: 'none', display: 'block'
-                }}>↓ SAVE</a>
-                <button onClick={onClear} style={{
-                  flex: 1, padding: '10px 0', background: 'transparent',
-                  border: '1px solid var(--muted)', color: 'var(--text-dim)',
-                  fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 2, cursor: 'pointer'
-                }}>✕ CLEAR</button>
-              </div>
-            </div>
-          )}
+          {/* Frame strip */}
+          <FrameStrip
+            frames={frames}
+            onDelete={onDeleteFrame}
+            onExport={onExport}
+          />
 
           {/* Level progress */}
-          <div>
+          <div style={{ padding: '12px 20px 16px' }}>
             <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 8 }}>LEVEL PROGRESS</div>
             <div style={{ display: 'flex', gap: 3 }}>
               {Array.from({ length: 20 }, (_, i) => (
                 <div key={i} style={{
                   flex: 1, height: 4,
-                  background: i === 0 ? 'var(--green)' : 'var(--muted)',
-                  opacity: i === 0 ? 1 : 0.4
+                  background: i < 2 ? 'var(--green)' : 'var(--muted)',
+                  opacity: i < 2 ? 1 : 0.4
                 }} />
               ))}
             </div>
-            <div style={{ marginTop: 6, fontSize: 9, color: 'var(--text-dim)', letterSpacing: 2 }}>1 / 20</div>
+            <div style={{ marginTop: 6, fontSize: 9, color: 'var(--text-dim)', letterSpacing: 2 }}>2 / 20</div>
           </div>
         </div>
       )}
