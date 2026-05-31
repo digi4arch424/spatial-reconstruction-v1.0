@@ -1,21 +1,31 @@
-import { useRef, useCallback }                       from 'react'
+import { useRef, useCallback, useState }              from 'react'
 import { useCamera, STATUS }                          from './hooks/useCamera'
 import { useFrameStore }                              from './hooks/useFrameStore'
 import { useWindowSize }                              from './hooks/useWindowSize'
+import { useDeviceOrientation }                       from './hooks/useDeviceOrientation'
+import { useScanGuidance }                            from './hooks/useScanGuidance'
 import { CornerBrackets, Crosshair,
          ScanLine, CaptureGuide }                     from './components/HudOverlays'
 import { Dot, StatBadge, Clock }                      from './components/Primitives'
 import { MobilePanel }                                from './components/MobilePanel'
 import { FrameStrip }                                 from './components/FrameStrip'
+import { CoverageMap }                                from './components/CoverageMap'
 
 function generateSessionId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 }
 
 export default function App() {
-  const sessionId = useRef(generateSessionId())
-  const width     = useWindowSize()
-  const isMobile  = width < 768
+  const sessionId          = useRef(generateSessionId())
+  const width              = useWindowSize()
+  const isMobile           = width < 768
+  const [orientHistory, setOrientHistory] = useState([])
+
+  // ── Device orientation ────────────────────────────────────────────────────
+  const {
+    orientation, available: orientAvailable,
+    permitted: orientPermitted, requestPermission: requestOrientation
+  } = useDeviceOrientation()
 
   // ── Frame storage ─────────────────────────────────────────────────────────
   const {
@@ -28,14 +38,23 @@ export default function App() {
     status, frameCount, error, flash, dupAlert,
     isLive, startCamera, captureFrame, stopCamera
   } = useCamera({
-    onFrameCaptured: (dataUrl, count, isBlurry) =>
-      saveFrame(dataUrl, count, isBlurry)
+    onFrameCaptured: (dataUrl, count, isBlurry) => {
+      // Record orientation snapshot at capture time if available
+      if (orientAvailable) {
+        setOrientHistory(h => [...h, { ...orientation }])
+      }
+      return saveFrame(dataUrl, count, isBlurry)
+    }
   })
+
+  // ── Scan guidance ─────────────────────────────────────────────────────────
+  const guidance = useScanGuidance(frameCount, orientAvailable ? orientation : null)
 
   // ── Stop: hardware + session reset ────────────────────────────────────────
   const handleStop = useCallback(async () => {
     stopCamera()
     await clearSession()
+    setOrientHistory([])
     sessionId.current = generateSessionId()
   }, [stopCamera, clearSession])
 
@@ -61,7 +80,7 @@ export default function App() {
           {!isMobile && <div style={{ width: 1, height: 18, background: 'var(--muted)' }} />}
           {!isMobile && <span style={{ fontFamily: 'var(--display)', fontSize: 15, fontWeight: 600, letterSpacing: 4, color: 'var(--text-dim)' }}>SPATIAL RECON</span>}
           <div style={{ padding: '2px 8px', border: '1px solid var(--green-dim)', background: 'rgba(57,232,62,0.06)' }}>
-            <span style={{ fontSize: 10, letterSpacing: 3, color: 'var(--green)' }}>LVL 02</span>
+            <span style={{ fontSize: 10, letterSpacing: 3, color: 'var(--green)' }}>LVL 03</span>
           </div>
         </div>
         {!isMobile && <Clock />}
@@ -71,9 +90,9 @@ export default function App() {
       {!isMobile && (
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--muted)', background: 'var(--bg-panel)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <span style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)' }}>MISSION</span>
-          <span style={{ fontSize: 12, letterSpacing: 2, color: 'var(--text)' }}>FRAME COLLECTOR — ORBIT SUBJECT, BUILD SESSION</span>
-          <span style={{ marginLeft: 'auto', fontSize: 9, letterSpacing: 3, color: 'var(--text-dim)' }}>
-            SESSION: {sessionId.current}
+          <span style={{ fontSize: 12, letterSpacing: 2, color: 'var(--text)' }}>SCENE SAMPLING — ORBIT SUBJECT, BUILD COVERAGE</span>
+          <span style={{ marginLeft: 'auto', fontSize: 9, letterSpacing: 3, color: guidance.phase.color }}>
+            {guidance.phase.label}
           </span>
         </div>
       )}
@@ -119,14 +138,14 @@ export default function App() {
               <CornerBrackets color={status === STATUS.CAPTURED ? 'var(--blue)' : 'var(--green)'} />
               <Crosshair active={status === STATUS.LOCKED} />
               <ScanLine scanning={status === STATUS.ACQUIRING} />
-              <CaptureGuide frameCount={frameCount} />
+              <CaptureGuide guidance={guidance} />
               <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 5, pointerEvents: 'none' }}>
                 <div style={{ fontSize: 10, letterSpacing: 3, color: 'rgba(57,232,62,0.8)' }}>REC ●</div>
               </div>
               {!isMobile && (
                 <div style={{ position: 'absolute', bottom: 20, left: 20, zIndex: 5, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <span style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(0,170,255,0.7)' }}>VID 1280×720 / MJPEG</span>
-                  <span style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(0,170,255,0.5)' }}>ENV CAM / AUTO FOCUS</span>
+                  <span style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(0,170,255,0.5)' }}>{orientAvailable ? 'GYRO: ACTIVE' : 'GYRO: OFFLINE'}</span>
                 </div>
               )}
             </>
@@ -147,17 +166,22 @@ export default function App() {
             <MobilePanel
               status={status} frameCount={frameCount} frames={frames}
               statusColor={statusColor} isLive={isLive}
+              guidance={guidance}
+              orientationHistory={orientHistory}
+              orientPermitted={orientPermitted}
               onStart={startCamera} onCapture={captureFrame}
               onStop={handleStop} onRetry={startCamera}
               onDeleteFrame={deleteFrame} onExport={exportZip}
+              onRequestOrientation={requestOrientation}
             />
           )}
         </div>
 
         {/* Desktop right panel */}
         {!isMobile && (
-          <div style={{ width: 260, borderLeft: '1px solid var(--muted)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          <div style={{ width: 260, borderLeft: '1px solid var(--muted)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowY: 'auto' }}>
 
+            {/* System status */}
             <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 12 }}>SYSTEM STATUS</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -165,6 +189,7 @@ export default function App() {
                   { label: 'SIGNAL',        on: isLive,                   color: 'var(--green)' },
                   { label: 'STREAM',        on: isLive,                   color: 'var(--blue)'  },
                   { label: 'CAPTURE READY', on: status === STATUS.LOCKED, color: 'var(--green)' },
+                  { label: 'GYROSCOPE',     on: orientAvailable,          color: 'var(--blue)'  },
                 ].map(({ label, on, color }) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 11, letterSpacing: 2, color: 'var(--text-dim)' }}>{label}</span>
@@ -177,13 +202,44 @@ export default function App() {
               </div>
             </div>
 
+            {/* Stats */}
             <div style={{ padding: 16, borderBottom: '1px solid var(--muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <StatBadge label="STATUS" value={status}                             color={statusColor}   />
-              <StatBadge label="FRAMES" value={String(frameCount).padStart(4,'0')} color="var(--green)" />
-              <StatBadge label="LAYER"  value="L02"                                color="var(--blue)"  />
-              <StatBadge label="MODULE" value="CAM"                                color="var(--text)"  />
+              <StatBadge label="STATUS"  value={status}                              color={statusColor}            />
+              <StatBadge label="FRAMES"  value={String(frameCount).padStart(4,'0')}  color="var(--green)"           />
+              <StatBadge label="QUALITY" value={`${guidance.quality}%`}              color={guidance.phase.color}   />
+              <StatBadge label="PHASE"   value={`P${guidance.phaseIndex + 1}`}        color="var(--blue)"            />
             </div>
 
+            {/* Scan phase */}
+            <div style={{ padding: 16, borderBottom: '1px solid var(--muted)' }}>
+              <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 10 }}>SCAN PHASE</div>
+              {guidance.phases.map((p, i) => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: i <= guidance.phaseIndex ? p.color : 'var(--muted)', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 2, color: i === guidance.phaseIndex ? p.color : 'var(--text-dim)' }}>{p.label}</div>
+                    {i === guidance.phaseIndex && (
+                      <div style={{ fontSize: 8, letterSpacing: 1, color: 'var(--text-dim)', marginTop: 2 }}>{p.instruction}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Coverage map */}
+            <div style={{ padding: 16, borderBottom: '1px solid var(--muted)' }}>
+              <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 8 }}>COVERAGE MAP</div>
+              <div style={{ border: '1px solid var(--muted)', background: '#020810' }}>
+                <CoverageMap frameCount={frameCount} orientationHistory={orientHistory} />
+              </div>
+              {!orientPermitted && (
+                <button onClick={requestOrientation} style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'rgba(0,170,255,0.06)', border: '1px solid var(--blue-dim)', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 3, cursor: 'pointer' }}>
+                  ⊕ ENABLE GYROSCOPE
+                </button>
+              )}
+            </div>
+
+            {/* Controls */}
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10, borderBottom: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 4 }}>CONTROLS</div>
               {status === STATUS.IDLE && (
@@ -217,19 +273,15 @@ export default function App() {
               )}
             </div>
 
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--muted)' }}>
-              <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 6 }}>SESSION</div>
-              <div style={{ fontSize: 9, letterSpacing: 1, color: 'var(--text-dim)', wordBreak: 'break-all' }}>{sessionId.current}</div>
-            </div>
-
+            {/* Level progress */}
             <div style={{ marginTop: 'auto', padding: 16, borderTop: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 10 }}>LEVEL PROGRESS</div>
               <div style={{ display: 'flex', gap: 4 }}>
                 {Array.from({ length: 20 }, (_, i) => (
-                  <div key={i} style={{ flex: 1, height: 4, background: i < 2 ? 'var(--green)' : 'var(--muted)', opacity: i < 2 ? 1 : 0.4 }} />
+                  <div key={i} style={{ flex: 1, height: 4, background: i < 3 ? 'var(--green)' : 'var(--muted)', opacity: i < 3 ? 1 : 0.4 }} />
                 ))}
               </div>
-              <div style={{ marginTop: 6, fontSize: 9, color: 'var(--text-dim)', letterSpacing: 2 }}>2 / 20</div>
+              <div style={{ marginTop: 6, fontSize: 9, color: 'var(--text-dim)', letterSpacing: 2 }}>3 / 20</div>
             </div>
           </div>
         )}
@@ -249,7 +301,7 @@ export default function App() {
           <span style={{ color: 'var(--muted)' }}>|</span>
           <span>DESIGN — BUILD — ITERATE</span>
           <span style={{ color: 'var(--muted)' }}>|</span>
-          <span>LAYER: BROWSER / L02</span>
+          <span>LAYER: BROWSER / L03</span>
           <span style={{ marginLeft: 'auto', color: statusColor }}>● {status}</span>
         </div>
       )}
