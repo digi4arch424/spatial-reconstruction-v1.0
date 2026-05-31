@@ -63,9 +63,11 @@ export function CoverageMap({ frameCount, orientationHistory }) {
     scene.add(hemi)
 
     // Base ring
-    const ringGeo = new THREE.RingGeometry(0.98, 1.0, 32)
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x1e3a52, side: THREE.DoubleSide })
-    scene.add(Object.assign(new THREE.Mesh(ringGeo, ringMat), { rotation: { x: -Math.PI / 2 } }))
+    const ringGeo  = new THREE.RingGeometry(0.98, 1.0, 32)
+    const ringMat  = new THREE.MeshBasicMaterial({ color: 0x1e3a52, side: THREE.DoubleSide })
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat)
+    ringMesh.rotation.x = -Math.PI / 2
+    scene.add(ringMesh)
 
     // Subject dot at origin
     const subjectGeo = new THREE.SphereGeometry(0.07, 8, 8)
