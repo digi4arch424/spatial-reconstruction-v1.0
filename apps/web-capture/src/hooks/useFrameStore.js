@@ -78,9 +78,22 @@ export function useFrameStore(sessionId) {
     setFrames([])
   }, [sessionId])
 
-  // ── Export all session frames as a ZIP ───────────────────────────────────
+  // ── Export all session frames as a ZIP download ───────────────────────────
   const exportZip = useCallback(async () => {
     if (frames.length === 0) return
+    const blob = await getZipBlob()
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `session-${sessionId}.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [frames, sessionId])
+
+  // ── Generate ZIP as Blob in memory (no download) ──────────────────────────
+  // Used by useUpload to POST the ZIP directly to the API.
+  const getZipBlob = useCallback(async () => {
+    if (frames.length === 0) return null
     const zip    = new JSZip()
     const folder = zip.folder(`session-${sessionId}`)
     frames.forEach(frame => {
@@ -91,14 +104,8 @@ export function useFrameStore(sessionId) {
         { base64: true }
       )
     })
-    const blob = await zip.generateAsync({ type: 'blob' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `session-${sessionId}.zip`
-    a.click()
-    URL.revokeObjectURL(url)
+    return zip.generateAsync({ type: 'blob' })
   }, [frames, sessionId])
 
-  return { frames, saveFrame, loadSession, deleteFrame, clearSession, exportZip }
+  return { frames, saveFrame, loadSession, deleteFrame, clearSession, exportZip, getZipBlob }
 }
