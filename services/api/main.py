@@ -47,9 +47,8 @@ async def health():
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-# Imported here once routers are built (next session).
-# Placeholder structure shown for clarity.
 
-# from .routers import sessions, reconstructions
-# app.include_router(sessions.router,       prefix="/sessions",       tags=["sessions"])
-# app.include_router(reconstructions.router, prefix="/reconstructions", tags=["reconstructions"])
+from .routers import sessions, reconstructions
+
+app.include_router(sessions.router,        prefix="/sessions",        tags=["sessions"])
+app.include_router(reconstructions.router, prefix="/reconstructions", tags=["reconstructions"])
