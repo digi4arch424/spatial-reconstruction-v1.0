@@ -9,7 +9,7 @@ Each level is a real subsystem. Each subsystem maps to a real deployment environ
 
 **End goal:** Reconstructed real-world spaces with spatial coordinates, AR anchoring, and 3D model placement.
 
-**Live:** https://digiarch424.github.io/spatial-recon-game/
+**Live:** https://digi4arch424.github.io/spatial-recon-game/
 
 ---
 
