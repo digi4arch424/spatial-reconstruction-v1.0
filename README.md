@@ -1,4 +1,4 @@
-# 🎮 Spatial Recon Game
+# 🎮 Spatial Recon
 
 [![Deploy Web Capture](https://github.com/DigiArch424/spatial-recon-game/actions/workflows/deploy-l01.yml/badge.svg)](https://github.com/DigiArch424/spatial-recon-game/actions/workflows/deploy-l01.yml)
 [![Live Demo](https://img.shields.io/badge/Live-GitHub%20Pages-blue)](https://digiarch424.github.io/spatial-recon-game/)
