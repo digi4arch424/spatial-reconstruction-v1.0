@@ -17,7 +17,7 @@ and 3D model placement.
 ## Walking Skeleton Status
 
 The system is being built as a thin vertical slice first — every layer connected
-end to end before any layer is deepened. Current status:
+end to end before any layer is developed. Current status:
 
 | Component | Status | Notes |
 |---|---|---|
