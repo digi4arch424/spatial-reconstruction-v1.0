@@ -4,12 +4,15 @@ import { useFrameStore }                              from './hooks/useFrameStor
 import { useWindowSize }                              from './hooks/useWindowSize'
 import { useDeviceOrientation }                       from './hooks/useDeviceOrientation'
 import { useScanGuidance }                            from './hooks/useScanGuidance'
+import { useUpload }                                  from './hooks/useUpload'
+import { useReconStatus }                             from './hooks/useReconStatus'
 import { CornerBrackets, Crosshair,
          ScanLine, CaptureGuide }                     from './components/HudOverlays'
 import { Dot, StatBadge, Clock }                      from './components/Primitives'
 import { MobilePanel }                                from './components/MobilePanel'
 import { FrameStrip }                                 from './components/FrameStrip'
 import { CoverageMap }                                from './components/CoverageMap'
+import { MeshViewer }                                 from './components/MeshViewer'
 
 function generateSessionId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
@@ -20,6 +23,7 @@ export default function App() {
   const width              = useWindowSize()
   const isMobile           = width < 768
   const [orientHistory, setOrientHistory] = useState([])
+  const [viewerOpen,    setViewerOpen]    = useState(false)
 
   // ── Device orientation ────────────────────────────────────────────────────
   const {
@@ -29,8 +33,23 @@ export default function App() {
 
   // ── Frame storage ─────────────────────────────────────────────────────────
   const {
-    frames, saveFrame, clearSession, deleteFrame, exportZip
+    frames, saveFrame, clearSession, deleteFrame, exportZip, getZipBlob
   } = useFrameStore(sessionId.current)
+
+  // ── Upload + pipeline status ──────────────────────────────────────────────
+  const {
+    uploadStatus, reconstructionId, progress: uploadProgress,
+    error: uploadError, upload, resetUpload
+  } = useUpload()
+
+  const {
+    status: reconStatus, connected: reconConnected, meshUrl
+  } = useReconStatus(reconstructionId)
+
+  // ── Handle upload ─────────────────────────────────────────────────────────
+  const handleUpload = useCallback(() => {
+    upload(sessionId.current, frameCount, getZipBlob)
+  }, [upload, frameCount, getZipBlob])
 
   // ── Camera hardware + capture logic ───────────────────────────────────────
   const {
@@ -54,9 +73,10 @@ export default function App() {
   const handleStop = useCallback(async () => {
     stopCamera()
     await clearSession()
+    resetUpload()
     setOrientHistory([])
     sessionId.current = generateSessionId()
-  }, [stopCamera, clearSession])
+  }, [stopCamera, clearSession, resetUpload])
 
   const statusColor = {
     IDLE:      'var(--text-dim)',
@@ -173,6 +193,12 @@ export default function App() {
               onStop={handleStop} onRetry={startCamera}
               onDeleteFrame={deleteFrame} onExport={exportZip}
               onRequestOrientation={requestOrientation}
+              onUpload={handleUpload}
+              uploadStatus={uploadStatus}
+              uploadProgress={uploadProgress}
+              uploadError={uploadError}
+              reconStatus={reconStatus}
+              reconConnected={reconConnected}
             />
           )}
         </div>
@@ -273,6 +299,32 @@ export default function App() {
               )}
             </div>
 
+            {/* Pipeline status — appears after upload */}
+            {reconstructionId && (
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--muted)' }}>
+                <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 8 }}>PIPELINE</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 10, letterSpacing: 2, color: reconStatus === 'COMPLETE' ? 'var(--green)' : reconStatus === 'FAILED' ? 'var(--red)' : '#f59e0b' }}>
+                    {reconStatus || 'QUEUED'}
+                  </span>
+                  <Dot on={reconConnected} color="var(--green)" />
+                </div>
+                <div style={{ fontSize: 9, letterSpacing: 1, color: 'var(--text-dim)', wordBreak: 'break-all', marginBottom: meshUrl ? 10 : 0 }}>
+                  {reconstructionId}
+                </div>
+                {meshUrl && (
+                  <button onClick={() => setViewerOpen(true)} style={{
+                    width: '100%', padding: '8px 0',
+                    background: 'rgba(57,232,62,0.1)',
+                    border: '1px solid var(--green)',
+                    color: 'var(--green)',
+                    fontFamily: 'var(--mono)', fontSize: 11,
+                    letterSpacing: 3, cursor: 'pointer'
+                  }}>▶ VIEW 3D MESH</button>
+                )}
+              </div>
+            )}
+
             {/* Level progress */}
             <div style={{ marginTop: 'auto', padding: 16, borderTop: '1px solid var(--muted)' }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 10 }}>LEVEL PROGRESS</div>
@@ -289,7 +341,17 @@ export default function App() {
 
       {/* Frame strip — desktop */}
       {!isMobile && (
-        <FrameStrip frames={frames} onDelete={deleteFrame} onExport={exportZip} />
+        <FrameStrip
+          frames={frames}
+          onDelete={deleteFrame}
+          onExport={exportZip}
+          onUpload={handleUpload}
+          uploadStatus={uploadStatus}
+          uploadProgress={uploadProgress}
+          uploadError={uploadError}
+          reconStatus={reconStatus}
+          reconConnected={reconConnected}
+        />
       )}
 
       {/* Bottom status bar — desktop */}
@@ -303,6 +365,17 @@ export default function App() {
           <span style={{ color: 'var(--muted)' }}>|</span>
           <span>LAYER: BROWSER / L03</span>
           <span style={{ marginLeft: 'auto', color: statusColor }}>● {status}</span>
+        </div>
+      )}
+
+      {/* Mesh viewer — full screen overlay */}
+      {viewerOpen && meshUrl && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
+          <MeshViewer
+            meshUrl={meshUrl}
+            sessionId={sessionId.current}
+            onClose={() => setViewerOpen(false)}
+          />
         </div>
       )}
 
