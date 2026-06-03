@@ -7,5 +7,12 @@ export default defineConfig({
   server: {
     port: 5173,
     https: false
+  },
+  optimizeDeps: {
+    include: [
+      'three',
+      'three/examples/jsm/loaders/OBJLoader.js',
+      'three/examples/jsm/controls/OrbitControls.js'
+    ]
   }
 })
