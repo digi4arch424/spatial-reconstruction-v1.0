@@ -195,7 +195,7 @@ npm run dev
 - 100% online-first — no local installs required to view or run
 - Open source libraries only
 - AR anchoring with real-world coordinates is the end goal
-- Walking skeleton first — thin vertical slice before deepening any layer
+- MVP first — thin vertical slice before deepening any layer
 - Progressive complexity: Browser → Edge → GPU → AI
 
 ## Repo
