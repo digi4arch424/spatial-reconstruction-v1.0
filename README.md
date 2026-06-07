@@ -159,7 +159,7 @@ spatial-recon-game/
 
 ---
 
-## Backend Deployment (Walking Skeleton)
+## Backend Deployment (MVP)
 
 Three free online services + Railway. See `infrastructure/README.md` for full details.
 
