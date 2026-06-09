@@ -9,7 +9,9 @@ export function MobilePanel({
   status, frameCount, frames, statusColor, isLive,
   guidance, orientationHistory, orientPermitted,
   onStart, onCapture, onStop, onRetry,
-  onDeleteFrame, onExport, onRequestOrientation
+  onDeleteFrame, onExport, onRequestOrientation,
+  onUpload, uploadStatus, uploadProgress, progressLabel,
+  uploadError, reconStatus, reconConnected
 }) {
   const [expanded, setExpanded] = useState(false)
 
@@ -112,7 +114,18 @@ export function MobilePanel({
           </div>
 
           {/* Frame strip */}
-          <FrameStrip frames={frames} onDelete={onDeleteFrame} onExport={onExport} />
+          <FrameStrip
+            frames={frames}
+            onDelete={onDeleteFrame}
+            onExport={onExport}
+            onUpload={onUpload}
+            uploadStatus={uploadStatus}
+            uploadProgress={uploadProgress}
+            progressLabel={progressLabel}
+            uploadError={uploadError}
+            reconStatus={reconStatus}
+            reconConnected={reconConnected}
+          />
 
           {/* Level progress */}
           <div style={{ padding: '12px 20px 16px' }}>
