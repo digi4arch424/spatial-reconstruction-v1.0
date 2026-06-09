@@ -17,16 +17,35 @@ export function MobilePanel({
 
   return (
     <div style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
+      position: 'fixed', 
+      bottom: 0, 
+      left: 0, 
+      right: 0, 
+      zIndex: 20,
       background: 'rgba(7,21,38,0.96)',
       borderTop: '1px solid var(--muted)',
-      backdropFilter: 'blur(8px)'
+      backdropFilter: 'blur(8px)',
+      maxHeight: expanded ? '70vh' : 'auto',
+      overflowY: expanded ? 'auto' : 'visible',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
 
-      {/* Handle + status strip */}
+      {/* Handle + status strip — always visible, sticky when expanded */}
       <div
         onClick={() => setExpanded(e => !e)}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', cursor: 'pointer', userSelect: 'none' }}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          padding: '10px 20px', 
+          cursor: 'pointer', 
+          userSelect: 'none',
+          background: 'rgba(7,21,38,0.96)',
+          flexShrink: 0,
+          backdropFilter: 'blur(8px)',
+          borderBottom: expanded ? '1px solid var(--muted)' : 'none'
+        }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Dot on={isLive} color="var(--green)" />
@@ -46,9 +65,11 @@ export function MobilePanel({
       </div>
 
       {/* Primary action — always visible */}
-      <div style={{ padding: '0 20px 12px', display: 'flex', gap: 10 }}>
+      <div style={{ padding: '0 20px 12px', display: 'flex', gap: 10, flexShrink: 0 }}>
         {status === STATUS.IDLE && (
-          <button onClick={onStart} style={{ flex: 1, padding: '16px 0', background: 'rgba(57,232,62,0.1)', border: '1px solid var(--green)', color: 'var(--green)', fontFamily: 'var(--mono)', fontSize: 14, letterSpacing: 3, cursor: 'pointer' }}>
+          <button onClick={onStart} style={{ flex: 1, padding: '16px 0', background: 'rgba(57,232,62,0.1)', border: '1px solid var(--green)', color: 'var(--green)', fontFamily: 'var(--mono)', fontSize: 13, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
+            onMouseEnter={e => e.target.style.background = 'rgba(57,232,62,0.2)'}
+            onMouseLeave={e => e.target.style.background = 'rgba(57,232,62,0.1)'}>
             ▶ INITIALIZE CAMERA
           </button>
         )}
@@ -59,27 +80,39 @@ export function MobilePanel({
         )}
         {status === STATUS.LOCKED && (
           <>
-            <button onClick={onCapture} style={{ flex: 2, padding: '16px 0', background: 'rgba(57,232,62,0.12)', border: '1px solid var(--green)', color: 'var(--green)', fontFamily: 'var(--mono)', fontSize: 14, letterSpacing: 3, cursor: 'pointer' }}>
+            <button onClick={onCapture} style={{ flex: 2, padding: '16px 0', background: 'rgba(57,232,62,0.12)', border: '1px solid var(--green)', color: 'var(--green)', fontFamily: 'var(--mono)', fontSize: 13, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
+              onMouseEnter={e => e.target.style.background = 'rgba(57,232,62,0.22)'}
+              onMouseLeave={e => e.target.style.background = 'rgba(57,232,62,0.12)'}>
               ◉ CAPTURE
             </button>
-            <button onClick={onStop} style={{ flex: 1, padding: '16px 0', background: 'transparent', border: '1px solid var(--muted)', color: 'var(--text-dim)', fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: 2, cursor: 'pointer' }}>
+            <button onClick={onStop} style={{ flex: 1, padding: '16px 0', background: 'transparent', border: '1px solid var(--muted)', color: 'var(--text-dim)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.target.style.borderColor = 'var(--red)'; e.target.style.color = 'var(--red)' }}
+              onMouseLeave={e => { e.target.style.borderColor = 'var(--muted)'; e.target.style.color = 'var(--text-dim)' }}>
               ■ STOP
             </button>
           </>
         )}
         {status === STATUS.ERROR && (
-          <button onClick={onRetry} style={{ flex: 1, padding: '16px 0', background: 'rgba(239,68,68,0.08)', border: '1px solid var(--red)', color: 'var(--red)', fontFamily: 'var(--mono)', fontSize: 13, letterSpacing: 3, cursor: 'pointer' }}>
+          <button onClick={onRetry} style={{ flex: 1, padding: '16px 0', background: 'rgba(239,68,68,0.08)', border: '1px solid var(--red)', color: 'var(--red)', fontFamily: 'var(--mono)', fontSize: 13, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
+            onMouseEnter={e => e.target.style.background = 'rgba(239,68,68,0.18)'}
+            onMouseLeave={e => e.target.style.background = 'rgba(239,68,68,0.08)'}>
             ↺ RETRY
           </button>
         )}
       </div>
 
-      {/* Expanded section */}
+      {/* Expanded section — scrollable content */}
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--muted)' }}>
+        <div style={{ 
+          borderTop: '1px solid var(--muted)', 
+          overflow: 'auto', 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: 0
+        }}>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, padding: '16px 20px 12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, padding: '16px 20px 12px', flexShrink: 0 }}>
             <StatBadge label="STATUS"  value={status.slice(0, 4)}              color={statusColor}   />
             <StatBadge label="FRAMES"  value={String(frameCount).padStart(4,'0')} color="var(--green)" />
             <StatBadge label="QUALITY" value={guidance ? `${guidance.quality}%` : '--'} color={guidance?.phase.color || 'var(--text-dim)'} />
@@ -88,8 +121,10 @@ export function MobilePanel({
 
           {/* Orientation permission button — iOS only, before permission granted */}
           {isLive && !orientPermitted && (
-            <div style={{ padding: '0 20px 12px' }}>
-              <button onClick={onRequestOrientation} style={{ width: '100%', padding: '10px 0', background: 'rgba(0,170,255,0.08)', border: '1px solid var(--blue-dim)', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 3, cursor: 'pointer' }}>
+            <div style={{ padding: '0 20px 12px', flexShrink: 0 }}>
+              <button onClick={onRequestOrientation} style={{ width: '100%', padding: '10px 0', background: 'rgba(0,170,255,0.08)', border: '1px solid var(--blue-dim)', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
+                onMouseEnter={e => e.target.style.background = 'rgba(0,170,255,0.18)'}
+                onMouseLeave={e => e.target.style.background = 'rgba(0,170,255,0.08)'}>
                 ⊕ ENABLE GYROSCOPE
               </button>
             </div>
@@ -97,7 +132,7 @@ export function MobilePanel({
 
           {/* Phase instruction */}
           {guidance && (
-            <div style={{ padding: '0 20px 12px' }}>
+            <div style={{ padding: '0 20px 12px', flexShrink: 0 }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 6 }}>INSTRUCTION</div>
               <div style={{ fontSize: 10, letterSpacing: 2, color: guidance.phase.color }}>
                 {guidance.phase.instruction}
@@ -105,30 +140,32 @@ export function MobilePanel({
             </div>
           )}
 
-          {/* Coverage map */}
-          <div style={{ padding: '0 20px 12px' }}>
+          {/* Coverage map — constrained size for mobile */}
+          <div style={{ padding: '0 20px 12px', flexShrink: 0 }}>
             <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 8 }}>COVERAGE MAP</div>
-            <div style={{ border: '1px solid var(--muted)', background: '#020810' }}>
+            <div style={{ border: '1px solid var(--muted)', background: '#020810', maxHeight: 200, overflow: 'auto' }}>
               <CoverageMap frameCount={frameCount} orientationHistory={orientationHistory} />
             </div>
           </div>
 
-          {/* Frame strip */}
-          <FrameStrip
-            frames={frames}
-            onDelete={onDeleteFrame}
-            onExport={onExport}
-            onUpload={onUpload}
-            uploadStatus={uploadStatus}
-            uploadProgress={uploadProgress}
-            progressLabel={progressLabel}
-            uploadError={uploadError}
-            reconStatus={reconStatus}
-            reconConnected={reconConnected}
-          />
+          {/* Frame strip — constrained scrollable area */}
+          <div style={{ padding: '0 20px 12px', maxHeight: 250, overflowY: 'auto' }}>
+            <FrameStrip
+              frames={frames}
+              onDelete={onDeleteFrame}
+              onExport={onExport}
+              onUpload={onUpload}
+              uploadStatus={uploadStatus}
+              uploadProgress={uploadProgress}
+              progressLabel={progressLabel}
+              uploadError={uploadError}
+              reconStatus={reconStatus}
+              reconConnected={reconConnected}
+            />
+          </div>
 
           {/* Level progress */}
-          <div style={{ padding: '12px 20px 16px' }}>
+          <div style={{ padding: '12px 20px 16px', flexShrink: 0 }}>
             <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--text-dim)', marginBottom: 8 }}>LEVEL PROGRESS</div>
             <div style={{ display: 'flex', gap: 3 }}>
               {Array.from({ length: 20 }, (_, i) => (
