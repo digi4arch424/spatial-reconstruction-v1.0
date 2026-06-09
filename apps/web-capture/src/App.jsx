@@ -33,13 +33,13 @@ export default function App() {
 
   // ── Frame storage ─────────────────────────────────────────────────────────
   const {
-    frames, saveFrame, clearSession, deleteFrame, exportZip, getZipBlob
+    frames, saveFrame, clearSession, deleteFrame, exportZip
   } = useFrameStore(sessionId.current)
 
   // ── Upload + pipeline status ──────────────────────────────────────────────
   const {
     uploadStatus, reconstructionId, progress: uploadProgress,
-    error: uploadError, upload, resetUpload
+    progressLabel, error: uploadError, upload, resetUpload
   } = useUpload()
 
   const {
@@ -66,8 +66,8 @@ export default function App() {
 
   // ── Handle upload — must be after useCamera so frameCount is declared ──────
   const handleUpload = useCallback(() => {
-    upload(sessionId.current, frameCount, getZipBlob)
-  }, [upload, frameCount, getZipBlob])
+    upload(sessionId.current, frames)
+  }, [upload, frames])
 
   // ── Stop: hardware + session reset ────────────────────────────────────────
   const handleStop = useCallback(async () => {
@@ -196,6 +196,7 @@ export default function App() {
               onUpload={handleUpload}
               uploadStatus={uploadStatus}
               uploadProgress={uploadProgress}
+              progressLabel={progressLabel}
               uploadError={uploadError}
               reconStatus={reconStatus}
               reconConnected={reconConnected}
@@ -348,6 +349,7 @@ export default function App() {
           onUpload={handleUpload}
           uploadStatus={uploadStatus}
           uploadProgress={uploadProgress}
+          progressLabel={progressLabel}
           uploadError={uploadError}
           reconStatus={reconStatus}
           reconConnected={reconConnected}
