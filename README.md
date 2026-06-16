@@ -1,7 +1,7 @@
-# 🎮 Spatial Recon v1.0
+# 🎮 Spatial Reconstruction v1.0
 
 [![Deploy Web Capture](https://github.com/DigiArch424/spatial-recon-game/actions/workflows/deploy-l01.yml/badge.svg)](https://github.com/DigiArch424/spatial-recon-game/actions/workflows/deploy-l01.yml)
-[![Live Demo](https://img.shields.io/badge/Live-GitHub%20Pages-blue)](https://digiarch424.github.io/spatial-recon-game/)
+[![Live Demo](https://img.shields.io/badge/Live-GitHub%20Pages-blue)]
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A web-based, open-source distributed 3D reconstruction engine, gamified across 20 levels.
@@ -9,8 +9,6 @@ Each level is a real subsystem. Each subsystem maps to a real deployment environ
 
 **End goal:** Reconstructed real-world spaces with spatial coordinates, AR anchoring,
 and 3D model placement.
-
-**Live:** https://digiarch424.github.io/spatial-recon-game/
 
 ---
 
